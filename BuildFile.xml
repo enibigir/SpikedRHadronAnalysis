@@ -39,6 +39,7 @@
 <use   name="root"/>
 <use   name="rootcore"/>
 <use   name="rootgraphics"/>
+<library file="src/SimCaloHitAnalyzer.cc"/>
 <export>
   <lib   name="1"/>
 </export>
