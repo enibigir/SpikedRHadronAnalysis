@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    HSCP/SimCaloHitAnalyzer
-// Class:      SimCaloHitAnalyzer
+// Package:    SpikedRHadronAnalyzer
+// Class:      SpikedRHadronAnalyzer
 //
-/**\class SimCaloHitAnalyzer SimCaloHitAnalyzer.cc HSCP/SimCaloHitAnalyzer/plugins/SimCaloHitAnalyzer.cc
+/**\class SpikedRHadronAnalyzer src/SpikedRHadronAnalyzer.cc
 
  Description: [Reads SIM ROOTs with gluino samples and outputs histograms for: calorimiter hit location, 4 momenta of R-Hadrons 1 and 2, ...]
 
@@ -220,10 +220,10 @@ class MCWeight;
 
 #define ETACUT 0.9
 
-class SimCaloHitAnalyzer : public edm::EDAnalyzer {
+class SpikedRHadronAnalyzer : public edm::EDAnalyzer {
 public:
-  explicit SimCaloHitAnalyzer (const edm::ParameterSet&);
-  ~SimCaloHitAnalyzer();
+  explicit SpikedRHadronAnalyzer (const edm::ParameterSet&);
+  ~SpikedRHadronAnalyzer();
 
 
 private:
@@ -374,7 +374,7 @@ std::string vectorToString(const std::vector<int>& vec, const std::string& delim
     return oss.str();
 }
 
-int SimCaloHitAnalyzer::determineCharge(int pdgID) {
+int SpikedRHadronAnalyzer::determineCharge(int pdgID) {
   int charge = -99;
   int pid = abs(pdgID);
   if (pid==1000993) {charge = 0;} // ~g_glueball
@@ -465,7 +465,7 @@ int SimCaloHitAnalyzer::determineCharge(int pdgID) {
   return(charge);
 }
 
-int SimCaloHitAnalyzer::determineType(int pdgID) {
+int SpikedRHadronAnalyzer::determineType(int pdgID) {
      int pidabs = abs(pdgID);
      if ((pidabs>1000900)&&(pidabs<1000999)) {
        return(TYPEGLUE);
@@ -480,7 +480,7 @@ int SimCaloHitAnalyzer::determineType(int pdgID) {
 }
 
 // delta(phi1-phi2) - return value from -pi to +pi
-float SimCaloHitAnalyzer::deltaphi(float phi1, float phi2) {
+float SpikedRHadronAnalyzer::deltaphi(float phi1, float phi2) {
   float tdelta = phi1 - phi2;
   while (tdelta<(-1.0*M_PI)) {tdelta += (2.0*M_PI);}
   while (tdelta>(1.0*M_PI)) {tdelta -= (2.0*M_PI);}
@@ -488,12 +488,12 @@ float SimCaloHitAnalyzer::deltaphi(float phi1, float phi2) {
 }
 
 // |delta(phi1-phi2)| - return value from 0 to +pi
-float SimCaloHitAnalyzer::deltaphiabs(float phi1, float phi2) {
+float SpikedRHadronAnalyzer::deltaphiabs(float phi1, float phi2) {
   float tdphi = deltaphi(phi1,phi2);
   return(fabs(tdphi));
 }
 
-float SimCaloHitAnalyzer::deltaRta(float phi1, float eta1, float phi2, float eta2) {
+float SpikedRHadronAnalyzer::deltaRta(float phi1, float eta1, float phi2, float eta2) {
   float diffphi1 = deltaphiabs(phi1,phi2);
   float diffeta1 = eta1 - eta2;
   float tmpdeltaR1 = sqrt(diffphi1*diffphi1 + diffeta1*diffeta1);
@@ -501,7 +501,7 @@ float SimCaloHitAnalyzer::deltaRta(float phi1, float eta1, float phi2, float eta
 }
 
 // preselection
-bool SimCaloHitAnalyzer::passHSCPPreselection(int typeMode, susybsm::HSCParticle hscpCan, reco::VertexCollection vertexColl, reco::VertexCollection inclusiveSecondaryVertices, reco::PFCandidateCollection pf, reco::DeDxData *dedxSObj, reco::DeDxData *dedxMObj, bool passedCutsArray[]) {
+bool SpikedRHadronAnalyzer::passHSCPPreselection(int typeMode, susybsm::HSCParticle hscpCan, reco::VertexCollection vertexColl, reco::VertexCollection inclusiveSecondaryVertices, reco::PFCandidateCollection pf, reco::DeDxData *dedxSObj, reco::DeDxData *dedxMObj, bool passedCutsArray[]) {
 
   reco::TrackRef track = hscpCan.trackRef();
   if (track.isNull()) return(false);
@@ -694,12 +694,12 @@ bool SimCaloHitAnalyzer::passHSCPPreselection(int typeMode, susybsm::HSCParticle
   return(true);
 }
 
-bool SimCaloHitAnalyzer::comparePID(pair<int, int> p1, pair<int, int> p2) {
+bool SpikedRHadronAnalyzer::comparePID(pair<int, int> p1, pair<int, int> p2) {
   return (p1.first < p2.first);
 }
 
 //constructor
-SimCaloHitAnalyzer::SimCaloHitAnalyzer(const edm::ParameterSet& iConfig) 
+SpikedRHadronAnalyzer::SpikedRHadronAnalyzer(const edm::ParameterSet& iConfig) 
  :  tGeomEsToken_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>())
 
 
@@ -762,7 +762,7 @@ SimCaloHitAnalyzer::SimCaloHitAnalyzer(const edm::ParameterSet& iConfig)
 
 
   // Output File
-  outputFile_ = new TFile("/uscms/home/cthompso/nobackup/CMSSW_10_6_30/src/SUSYBSMAnalysis/HSCP/test/Gluinos1800GeV_SimCaloHitPos_EXO-RunIISummer20UL18GENSIM-00010-v3.root", "RECREATE");  
+  outputFile_ = new TFile("/uscms/home/cthompso/nobackup/CMSSW_10_6_30/src/SUSYBSMAnalysis/HSCP/test/Gluinos1800GeV.root", "RECREATE");  
 
   // Create csv for energy spike R-hadron analysis
   csv.open ("/uscms/home/cthompso/nobackup/CMSSW_10_6_30/src/SUSYBSMAnalysis/HSCP/test/blank.csv");
@@ -870,7 +870,7 @@ SimCaloHitAnalyzer::SimCaloHitAnalyzer(const edm::ParameterSet& iConfig)
 
 
 //destructor
-SimCaloHitAnalyzer::~SimCaloHitAnalyzer() {
+SpikedRHadronAnalyzer::~SpikedRHadronAnalyzer() {
   // Write histograms and file
   outputFile_->cd();
 
@@ -920,7 +920,7 @@ SimCaloHitAnalyzer::~SimCaloHitAnalyzer() {
   csv.close();
 }
 
-void SimCaloHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void SpikedRHadronAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
    evtcount++;
 
@@ -1627,4 +1627,4 @@ void SimCaloHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup
   */
 }
 //define this as a plug-in
-DEFINE_FWK_MODULE(SimCaloHitAnalyzer);
+DEFINE_FWK_MODULE(SpikedRHadronAnalyzer);

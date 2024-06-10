@@ -25,7 +25,7 @@ process.source = cms.Source("PoolSource",
     )
 )
 
-process.demo = cms.EDAnalyzer("SimCaloHitAnalyzer",
+process.demo = cms.EDAnalyzer("SpikedRHadronAnalyzer",
 
 #    gen_info = cms.InputTag("genParticles","","DIGI2RAW"),
     gen_info = cms.InputTag("genParticles","","SIM"),
