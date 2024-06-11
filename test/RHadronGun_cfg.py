@@ -90,8 +90,8 @@ process.generator = cms.EDFilter("FlatRandomEGunProducer",
     particleFile = cms.untracked.string('Configuration/Generator/data/particles_gluino_1800_GeV.txt'),
     pdtFile = cms.FileInPath('Configuration/Generator/data/hscppythiapdtgluino1800.tbl'),
     processFile = cms.untracked.string(options.inputFiles[0]),
-    pythiaHepMCVerbosity = cms.untracked.bool(False),
-    pythiaPylistVerbosity = cms.untracked.int32(0),
+    pythiaHepMCVerbosity = cms.untracked.bool(True),
+    pythiaPylistVerbosity = cms.untracked.int32(10),
     slhaFile = cms.untracked.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
     useregge = cms.bool(False)
 )
