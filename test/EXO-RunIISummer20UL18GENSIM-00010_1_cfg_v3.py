@@ -26,7 +26,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1000)
+    input = cms.untracked.int32(50)
 )
 
 # random number seed - change below
@@ -67,7 +67,7 @@ process.RAWSIMoutput = cms.OutputModule("PoolOutputModule",
         filterName = cms.untracked.string('')
     ),
     eventAutoFlushCompressedSize = cms.untracked.int32(20971520),
-    fileName = cms.untracked.string('file:EXO-RunIISummer20UL18GENSIM-00010-v3.root'),
+    fileName = cms.untracked.string('data/Rerun_EXO-RunIISummer20UL18GENSIM-00010-v3.root'),
     outputCommands = process.RAWSIMEventContent.outputCommands,
     splitLevel = cms.untracked.int32(0)
 )
@@ -146,7 +146,7 @@ process.generator = cms.EDFilter("Pythia8ConcurrentGeneratorFilter",
             'Main:timesAllowErrors = 10000', 
             'Check:epTolErr = 0.01', 
             'Beams:setProductionScalesFromLHEF = off', 
-            'SLHA:keepSM = on', 
+            #'SLHA:keepSM = on', COMMENTED OUT DUE TO ERROR
             'SLHA:minMassSM = 1000.', 
             'ParticleDecays:limitTau0 = on', 
             'ParticleDecays:tau0Max = 10', 
