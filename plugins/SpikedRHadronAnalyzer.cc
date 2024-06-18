@@ -762,10 +762,10 @@ SpikedRHadronAnalyzer::SpikedRHadronAnalyzer(const edm::ParameterSet& iConfig)
 
 
   // Output File
-  outputFile_ = new TFile("/uscms/home/cthompso/nobackup/CMSSW_14_0_1/src/SpikedRHadronAnalysis/data/Gluinos1800GeV.root", "RECREATE");  
+  outputFile_ = new TFile("/uscms/home/cthompso/nobackup/CMSSW_13_3_1/src/SpikedRHadronAnalysis/data/Gluinos1800GeV.root", "RECREATE");  
 
   // Create csv for energy spike R-hadron analysis
-  csv.open ("/uscms/home/cthompso/nobackup/CMSSW_14_0_1/src/SpikedRHadronAnalysis/data/testing.csv");
+  csv.open ("/uscms/home/cthompso/nobackup/CMSSW_13_3_1/src/SpikedRHadronAnalysis/data/testing.csv");
   csv << "Event,Calo Hit ID,Calo Hit Energy [GeV],Process Type,Calo Hit Parent Particle,Outgoing Particles From Vertex,Parent To Vertex\n";
 
   // Declare ROOT histograms
