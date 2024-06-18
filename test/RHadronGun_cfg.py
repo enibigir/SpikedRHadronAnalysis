@@ -4,7 +4,7 @@
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
 # with command line options: Configuration/GenProduction/python/EXO-RunIISummer20UL18GENSIM-00010-fragment.py --python_filename EXO-RunIISummer20UL18GENSIM-00010_1_cfg.py --eventcontent RAWSIM --customise SimG4Core/CustomPhysics/Exotica_HSCP_SIM_cfi.customise,Configuration/DataProcessing/Utils.addMonitoring --datatier GEN-SIM --fileout file:EXO-RunIISummer20UL18GENSIM-00010.root --conditions 106X_upgrade2018_realistic_v4 --beamspot Realistic25ns13TeVEarly2018Collision --step GEN,SIM --geometry DB:Extended --era Run2_2018 --no_exec --mc
 import FWCore.ParameterSet.Config as cms
-from FWCore.ParameterSet.VarParsing import VarParsing
+
 from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
 
 options = VarParsing('python')
@@ -28,7 +28,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(100)
+    input = cms.untracked.int32(50)
 )
 
 # Input source
@@ -78,7 +78,7 @@ process.generator = cms.EDFilter("FlatRandomEGunProducer",
 		MinEta = cms.vdouble(0.0, 0.0),
 		MinP = cms.untracked.vdouble(0.0, 0.0),
 		MinPt = cms.untracked.vdouble(50.0, 50.0),
-		PartID = cms.vint32(1000993),
+		PartID = cms.vint32(1009213),
 		ParticleCharge = cms.untracked.int32(0),
     ),
     SLHAFileForPythia8 = cms.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
@@ -105,3 +105,34 @@ process.simulation_step = cms.Path(process.psim)
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
+
+# Schedule definition
+process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.endjob_step,process.RAWSIMoutput_step)
+from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
+associatePatAlgosToolsTask(process)
+# filter all path with the production filter sequence
+for path in process.paths:
+	getattr(process,path).insert(0, process.ProductionFilterSequence)
+
+# customisation of the process.
+
+# Automatic addition of the customisation function from SimG4Core.CustomPhysics.Exotica_HSCP_SIM_cfi
+from SimG4Core.CustomPhysics.Exotica_HSCP_SIM_cfi import customise 
+
+#call to customisation function customise imported from SimG4Core.CustomPhysics.Exotica_HSCP_SIM_cfi
+process = customise(process)
+
+# Automatic addition of the customisation function from Configuration.DataProcessing.Utils
+from Configuration.DataProcessing.Utils import addMonitoring 
+
+#call to customisation function addMonitoring imported from Configuration.DataProcessing.Utils
+process = addMonitoring(process)
+
+# End of customisation functions
+
+# Customisation from command line
+
+# Add early deletion of temporary data products to reduce peak memory need
+from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
+process = customiseEarlyDelete(process)
+# End adding early deletion
