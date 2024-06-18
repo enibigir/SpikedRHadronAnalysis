@@ -4,7 +4,7 @@
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
 # with command line options: Configuration/GenProduction/python/EXO-RunIISummer20UL18GENSIM-00010-fragment.py --python_filename EXO-RunIISummer20UL18GENSIM-00010_1_cfg.py --eventcontent RAWSIM --customise SimG4Core/CustomPhysics/Exotica_HSCP_SIM_cfi.customise,Configuration/DataProcessing/Utils.addMonitoring --datatier GEN-SIM --fileout file:EXO-RunIISummer20UL18GENSIM-00010.root --conditions 106X_upgrade2018_realistic_v4 --beamspot Realistic25ns13TeVEarly2018Collision --step GEN,SIM --geometry DB:Extended --era Run2_2018 --no_exec --mc
 import FWCore.ParameterSet.Config as cms
-
+from FWCore.ParameterSet.VarParsing import VarParsing
 from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
 
 options = VarParsing('python')
@@ -37,6 +37,8 @@ process.source = cms.Source("EmptySource")
 process.options = cms.untracked.PSet(
 
 )
+
+
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
@@ -72,12 +74,16 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2018_realistic_v4', '')
 
 
-process.generator = cms.EDFilter("FlatRandomEGunProducer",
+process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
-		MaxEta = cms.vdouble(0.0, 0.0),
-		MinEta = cms.vdouble(0.0, 0.0),
-		MinP = cms.untracked.vdouble(0.0, 0.0),
-		MinPt = cms.untracked.vdouble(50.0, 50.0),
+		MaxEta = cms.double(0.0),
+		MinEta = cms.double(0.0),
+        MinPhi = cms.double(0.0),
+        MaxPhi = cms.double(0.0),
+		MinP = cms.double(0.0),
+		MinPt = cms.double(50.0),
+        MinE = cms.double(1.0),
+        MaxE = cms.double(10000.0),
 		PartID = cms.vint32(1009213),
 		ParticleCharge = cms.untracked.int32(0),
     ),
@@ -93,6 +99,7 @@ process.generator = cms.EDFilter("FlatRandomEGunProducer",
     pythiaHepMCVerbosity = cms.untracked.bool(True),
     pythiaPylistVerbosity = cms.untracked.int32(10),
     slhaFile = cms.untracked.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
+    AddAntiParticle = cms.bool(True),
     useregge = cms.bool(False)
 )
 
@@ -108,6 +115,8 @@ process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.endjob_step,process.RAWSIMoutput_step)
+
+'''
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
 # filter all path with the production filter sequence
@@ -136,3 +145,4 @@ process = addMonitoring(process)
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
 process = customiseEarlyDelete(process)
 # End adding early deletion
+'''
