@@ -35,16 +35,6 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("EmptySource")
 
 process.options = cms.untracked.PSet(
-    TryToContinue = cms.untracked.vstring('ProductNotFound')
-)
-
-
-
-# Production Info
-process.configurationMetadata = cms.untracked.PSet(
-    annotation = cms.untracked.string('Configuration/GenProduction/python/EXO-RunIISummer20UL18GENSIM-00010-fragment.py nevts:1'),
-    name = cms.untracked.string('Applications'),
-    version = cms.untracked.string('$Revision: 1.19 $')
 )
 
 # Output definition
@@ -84,23 +74,10 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
 		MinPt = cms.double(50.0),
         MinE = cms.double(1.0),
         MaxE = cms.double(10000.0),
-		PartID = cms.vint32(1009213),
-		ParticleCharge = cms.untracked.int32(0),
+		PartID = cms.vint32(11)
     ),
-    SLHAFileForPythia8 = cms.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
-    comEnergy = cms.double(13000.0),
-    crossSection = cms.untracked.double(-1),
-    hscpFlavor = cms.untracked.string('gluino'),
-    massPoint = cms.untracked.int32(1800),
-    maxEventsToPrint = cms.untracked.int32(0),
-    particleFile = cms.untracked.string('Configuration/Generator/data/particles_gluino_1800_GeV.txt'),
-    pdtFile = cms.FileInPath('Configuration/Generator/data/hscppythiapdtgluino1800.tbl'),
-    processFile = cms.untracked.string(options.inputFiles[0]),
-    pythiaHepMCVerbosity = cms.untracked.bool(True),
-    pythiaPylistVerbosity = cms.untracked.int32(10),
-    slhaFile = cms.untracked.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
-    AddAntiParticle = cms.bool(True),
-    useregge = cms.bool(False)
+    Verbosity = cms.untracked.int32(0),
+    AddAntiParticle = cms.bool(True)
 )
 
 
@@ -125,10 +102,10 @@ for path in process.paths:
 # customisation of the process.
 
 # Automatic addition of the customisation function from SimG4Core.CustomPhysics.Exotica_HSCP_SIM_cfi
-from SimG4Core.CustomPhysics.Exotica_HSCP_SIM_cfi import customise 
+#from SimG4Core.CustomPhysics.Exotica_HSCP_SIM_cfi import customise 
 
 #call to customisation function customise imported from SimG4Core.CustomPhysics.Exotica_HSCP_SIM_cfi
-process = customise(process)
+#process = customise(process)
 
 # Automatic addition of the customisation function from Configuration.DataProcessing.Utils
 from Configuration.DataProcessing.Utils import addMonitoring 
