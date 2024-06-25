@@ -6,12 +6,12 @@ export SCRAM_ARCH=el9_amd64_gcc12
 cmsrel CMSSW_14_0_9
 cd CMSSW_14_0_9/src
 cmsenv
-scram b -j 8
 ```
 For the following step you should have a ssh key associated to your GitHub account. For more information, see [connecting-to-github-with-ssh-key.](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 ```
 git clone -b main git@github.com:ctdax/SpikedRHadronAnalysis.git SUSYBSMAnalysis/SpikedRHadronAnalysis
-cd SpikedRHadronAnalysis
+scram b -j 8
+cd SUSYBSMAnalysis/SpikedRHadronAnalysis
 ```
 
 ## plugins/SpikedRHadronAnalyzer.cc
