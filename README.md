@@ -25,7 +25,7 @@ scp <YOUR USERNAME>@lxplus.cern.ch:/afs/cern.ch/user/c/cthompso/private/CMSSW_14
 ```
  Now you can use this command to run SpikedRHadronAnalyzer.cc
 ```
-cmsRun test/SpikedRHadronAnalyzer_cfg.py
+cmsRun python/SpikedRHadronAnalyzer_cfg.py
 ```
 
 ## R-Hadron Gun
