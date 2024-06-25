@@ -4,14 +4,14 @@ This is a fork of the SUSYBSMAnalysis repository, a large repo that contains cod
 ## Setup
 Once you are in the cmslpc cluster, run the following.
 ```
-export SCRAM_ARCH=slc7_amd64_gcc700
-cmsrel CMSSW_10_6_30
-cd CMSSW_10_6_30/src
+export SCRAM_ARCH=el9_amd64_gcc12
+cmsrel CMSSW_14_0_9
+cd CMSSW_14_0_9/src
 cmsenv
 ```
 For the following step you should have a ssh key associated to your GitHub account. For more information, see [connecting-to-github-with-ssh-key.](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 ```
-git clone -b master git@github.com:ctdax/SUSYBSMAnalysis.git SUSYBSMAnalysis
+git clone -b master git@github.com:ctdax/SpikedRHadronAnalysis.git SUSYBSMAnalysis/SpikedRHadronAnalysis
 ```
 
 ## SimCaloHitAnalyzer.cc & GenSimEDMAnalyzer.cc
