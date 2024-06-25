@@ -6,6 +6,7 @@ export SCRAM_ARCH=el9_amd64_gcc12
 cmsrel CMSSW_14_0_9
 cd CMSSW_14_0_9/src
 cmsenv
+scram b -j 8
 ```
 For the following step you should have a ssh key associated to your GitHub account. For more information, see [connecting-to-github-with-ssh-key.](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 ```
@@ -21,7 +22,7 @@ scp <YOUR USERNAME>@cmslpc-el9.fnal.gov:/uscms_data/d2/tadams/hscp/fall22a/CMSSW
 
 OR
 
-scp <YOUR USERNAME>@lxplus.cern.ch:/afs/cern.ch/user/c/cthompso/private/CMSSW_14_0_9/src/SpikedRHadronAnalysis/data/EXO-RunIISummer20UL18GENSIM-00010-v3.root data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
+scp <YOUR USERNAME>@lxplus.cern.ch:/eos/user/c/cthompso/data/EXO-RunIISummer20UL18GENSIM-00010-v3.root data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
 ```
  Now you can use this command to run SpikedRHadronAnalyzer.cc
 ```
