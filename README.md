@@ -3,18 +3,23 @@
 Once you are in the cmslpc cluster or lxplus, run the following.
 ```
 export SCRAM_ARCH=el9_amd64_gcc12
-cmsrel CMSSW_13_3_1
-cd CMSSW_13_3_1/src
+cmsrel CMSSW_14_0_9
+cd CMSSW_14_0_9/src
 cmsenv
 ```
 For the following step you should have a ssh key associated to your GitHub account. For more information, see [connecting-to-github-with-ssh-key.](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 ```
 git clone -b master git@github.com:ctdax/SpikedRHadronAnalysis.git SpikedRHadronAnalysis
+cd SpikedRHadronAnalysis
 ```
 
 ## plugins/SpikedRHadronAnalyzer.cc
 
-SpikedRHadronAnalyzer.cc analyzes AOD level root files containing two R-Hadrons per event. It can be run using the command
+SpikedRHadronAnalyzer.cc analyzes AOD level ROOT files containing two R-Hadrons per event. The gluino AOD ROOT file that it is run on could not be tracked on Git due to it's size, it can be copied to your directory from the lpc using this command.
+```
+scp <YOUR USERNAME>@cmslpc-el9.fnal.gov:/uscms_data/d2/tadams/hscp/fall22a/CMSSW_10_6_30/src/EXO-RunIISummer20UL18GENSIM-00010-v3.root data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
+```
+ Now you can use this command to run SpikedRHadronAnalyzer.cc
 ```
 cmsRun test/SpikedRHadronAnalyzer_cfg.py
 ```
@@ -43,10 +48,10 @@ cmsRun python/config_cfg.py
 
 The SimCaloHitAnalyzer currently analyzes an AOD gluino root file which is present in config_cfg.py. The contents of the AOD file can either be observed in a TBrowser
 ```
-root -l file:/uscms_data/d2/tadams/hscp/fall22a/CMSSW_10_6_30/src/EXO-RunIISummer20UL18GENSIM-00010-v3.root
+root -l data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
 TBrowser b("Events")
 ```
 or by using edmDump
 ```
-edmDumpEventContent file:/uscms_data/d2/tadams/hscp/fall22a/CMSSW_10_6_30/src/EXO-RunIISummer20UL18GENSIM-00010-v3.root
+edmDumpEventContent data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
 ```

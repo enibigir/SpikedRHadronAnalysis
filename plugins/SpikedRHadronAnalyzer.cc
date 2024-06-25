@@ -28,11 +28,11 @@
 
 //Triggers and Handles
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/Framework/interface/EDFilter.h"
+//#include "FWCore/Framework/interface/EDFilter.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
@@ -220,7 +220,7 @@ class MCWeight;
 
 #define ETACUT 0.9
 
-class SpikedRHadronAnalyzer : public edm::EDAnalyzer {
+class SpikedRHadronAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
   explicit SpikedRHadronAnalyzer (const edm::ParameterSet&);
   ~SpikedRHadronAnalyzer();
@@ -240,6 +240,10 @@ private:
   edm::EDGetTokenT<vector<reco::GenParticle>> genParticlesToken_;
 
   const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> tGeomEsToken_;
+  const edm::ESGetToken<DTGeometry, MuonGeometryRecord> DTGeometry_;
+  const edm::ESGetToken<CSCGeometry, MuonGeometryRecord> CSCGeometry_;
+  const edm::ESGetToken<RPCGeometry, MuonGeometryRecord> RPCGeometry_;
+  const edm::ESGetToken<GEMGeometry, MuonGeometryRecord> GEMGeometry_;
 
   // Tracker hits
   edm::EDGetTokenT<edm::SimTrackContainer> edmSimTrackContainerToken_;
@@ -762,10 +766,10 @@ SpikedRHadronAnalyzer::SpikedRHadronAnalyzer(const edm::ParameterSet& iConfig)
 
 
   // Output File
-  outputFile_ = new TFile("~/private/CMSSW_13_3_1/src/SpikedRHadronAnalysis/data/Gluinos1800GeV.root", "RECREATE");  
+  outputFile_ = new TFile("data/Gluinos1800GeV.root", "RECREATE");  
 
   // Create csv for energy spike R-hadron analysis
-  csv.open ("~/private/CMSSW_13_3_1/src/SpikedRHadronAnalysis/data/testing.csv");
+  csv.open ("data/testing.csv");
   csv << "Event,Calo Hit ID,Calo Hit Energy [GeV],Process Type,Calo Hit Parent Particle,Outgoing Particles From Vertex,Parent To Vertex\n";
 
   // Declare ROOT histograms
@@ -1131,24 +1135,18 @@ void SpikedRHadronAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSe
       return;
     }
 
-   // Import tracker, calorimiter, and muon geometry
-  edm::ESHandle<TrackerGeometry> tkGeometry;
-  iSetup.get<TrackerDigiGeometryRecord>().get(tkGeometry);
+  // Import tracker, calorimiter, and muon geometry
+  const TrackerGeometry* tkGeometry = &iSetup.getData(tGeomEsToken_);
 
-  edm::ESHandle<CaloGeometry> caloGeometry;
-  iSetup.get<CaloGeometryRecord>().get(caloGeometry); 
+  const CaloGeometry caloGeometry = iSetup.getData(tok_geom_);
 
-  edm::ESHandle<DTGeometry> DTGeometry;
-  iSetup.get<MuonGeometryRecord>().get(DTGeometry);
+  const DTGeometry muonDTGeometry = iSetup.getData(DTGeometry_);
 
-  edm::ESHandle<CSCGeometry> CSCGeometry;
-  iSetup.get<MuonGeometryRecord>().get(CSCGeometry);
+  const CSCGeometry muonCSCGeometry = iSetup.getData(CSCGeometry_);
 
-  edm::ESHandle<RPCGeometry> RPCGeometry;
-  iSetup.get<MuonGeometryRecord>().get(RPCGeometry);
+  const RPCGeometry muonRPCGeometry = iSetup.getData(RPCGeometry_);
 
-  edm::ESHandle<GEMGeometry> GEMGeometry;
-  iSetup.get<MuonGeometryRecord>().get(GEMGeometry);
+  const GEMGeometry muonGEMGeometry = iSetup.getData(GEMGeometry_);
 
    // Find R-hadrons
    const reco::GenParticle *genrhad1=0;
@@ -1626,5 +1624,6 @@ void SpikedRHadronAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSe
   }
   */
 }
+
 //define this as a plug-in
 DEFINE_FWK_MODULE(SpikedRHadronAnalyzer);
