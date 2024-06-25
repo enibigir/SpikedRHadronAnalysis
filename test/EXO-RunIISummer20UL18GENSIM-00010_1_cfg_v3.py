@@ -67,7 +67,7 @@ process.RAWSIMoutput = cms.OutputModule("PoolOutputModule",
         filterName = cms.untracked.string('')
     ),
     eventAutoFlushCompressedSize = cms.untracked.int32(20971520),
-    fileName = cms.untracked.string('data/Regge_EXO-RunIISummer20UL18GENSIM-00010-v3.root'),
+    fileName = cms.untracked.string('data/EXO-RunIISummer20UL18GENSIM-00010-v3.root'),
     outputCommands = process.RAWSIMEventContent.outputCommands,
     splitLevel = cms.untracked.int32(0)
 )
@@ -165,7 +165,7 @@ process.generator = cms.EDFilter("Pythia8ConcurrentGeneratorFilter",
     pythiaHepMCVerbosity = cms.untracked.bool(False),
     pythiaPylistVerbosity = cms.untracked.int32(0),
     slhaFile = cms.untracked.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
-    useregge = cms.bool(True),
+    useregge = cms.bool(False),
     initialSeed = cms.untracked.uint32(912345678),
 #    engineName = cms.untracked.string('TRandom3')
 )

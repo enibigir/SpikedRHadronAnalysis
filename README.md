@@ -1,22 +1,34 @@
-# HSCP
-This is a fork of the SUSYBSMAnalysis repository, a large repo that contains code for many different purposes. The focus of this fork will be in the HSCP directory.
-
 ## Setup
-Once you are in the cmslpc cluster, run the following.
+
+Once you are in the cmslpc cluster or lxplus, run the following.
 ```
-export SCRAM_ARCH=slc7_amd64_gcc700
-cmsrel CMSSW_10_6_30
-cd CMSSW_10_6_30/src
+export SCRAM_ARCH=el9_amd64_gcc12
+cmsrel CMSSW_13_3_1
+cd CMSSW_13_3_1/src
 cmsenv
 ```
 For the following step you should have a ssh key associated to your GitHub account. For more information, see [connecting-to-github-with-ssh-key.](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 ```
-git clone -b master git@github.com:ctdax/SUSYBSMAnalysis.git SUSYBSMAnalysis
+git clone -b master git@github.com:ctdax/SpikedRHadronAnalysis.git SpikedRHadronAnalysis
 ```
 
-## SimCaloHitAnalyzer.cc & GenSimEDMAnalyzer.cc
+## plugins/SpikedRHadronAnalyzer.cc
 
-GenSimEDMAnalyzer.cc analyzes AOD level root files containing HSCP candidates in the tracker and muon chambers, it was written by Todd. SimCaloHitAnalyzer.cc is my revision of GenSimEDMAnalyzer to observe R-Hadron hits and saturation in the calorimiter.
+SpikedRHadronAnalyzer.cc analyzes AOD level root files containing two R-Hadrons per event. It can be run using the command
+```
+cmsRun test/SpikedRHadronAnalyzer_cfg.py
+```
+
+## R-Hadron Gun
+
+test/RHadronGun_cfg.py takes a custom input file for the available R-Hadron processes and outputs an AOD root file with 10 events. It can be run with the following command
+```
+cmsRun test/RHadronGun_cfg.py inputFiles=<INPUT_FILE> outputFile=<OUTPUT_FILE>
+```
+Alternatively, plugins/runRHadronGun.sh was built to run the RHadronGun over all process files in data/IndividualRHadronProcesses. If you would like to do this, use the command
+```
+./plugins/runRHadronGun.sh
+```
 
 ## Information I found helpful when learning CMSSW
 

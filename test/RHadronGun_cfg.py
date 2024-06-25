@@ -8,6 +8,7 @@ from FWCore.ParameterSet.VarParsing import VarParsing
 from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
 
 options = VarParsing('python')
+options.register ('particleID','',VarParsing.multiplicity.singleton, VarParsing.varType.int, "particleID")
 options.parseArguments()
 process = cms.Process('SIM',Run2_2018)
 
@@ -28,17 +29,26 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(50)
+    input = cms.untracked.int32(20)
 )
+
+# random number seed - change below
+#RandomNumberGeneratorService = cms.Service(
+
+#     "RandomNumberGeneratorService",
+
+     # This is to initialize the random engine of the source
+#     generator = cms.PSet(
+#     ),
+#)
+
 
 # Input source
 process.source = cms.Source("EmptySource")
 
 process.options = cms.untracked.PSet(
-    TryToContinue = cms.untracked.vstring('ProductNotFound')
+
 )
-
-
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
@@ -73,19 +83,68 @@ process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2018_realistic_v4', '')
 
+process.dirhadrongenfilter = cms.EDFilter("MCParticlePairFilter",
+    MaxEta = cms.untracked.vdouble(100.0, 100.0),
+    MinEta = cms.untracked.vdouble(-100, -100),
+    MinP = cms.untracked.vdouble(0.0, 0.0),
+    MinPt = cms.untracked.vdouble(0.0, 0.0),
+    ParticleCharge = cms.untracked.int32(0),
+    ParticleID1 = cms.untracked.vint32(options.particleID),
+    ParticleID2 = cms.untracked.vint32(options.particleID),
+    Status = cms.untracked.vint32(1, 1)
+)
 
-process.generator = cms.EDProducer("FlatRandomEGunProducer",
-    PGunParameters = cms.PSet(
-		MaxEta = cms.double(0.0),
-		MinEta = cms.double(0.0),
-        MinPhi = cms.double(0.0),
-        MaxPhi = cms.double(0.0),
-		MinP = cms.double(0.0),
-		MinPt = cms.double(50.0),
-        MinE = cms.double(1.0),
-        MaxE = cms.double(10000.0),
-		PartID = cms.vint32(1009213),
-		ParticleCharge = cms.untracked.int32(0),
+
+process.generator = cms.EDFilter("Pythia8ConcurrentGeneratorFilter",
+    PythiaParameters = cms.PSet(
+        parameterSets = cms.vstring(
+            'pythia8CommonSettings', 
+            'pythia8CP5Settings', 
+            'processParameters'
+        ),
+        processParameters = cms.vstring(
+            'SUSY:all = off', 
+            'SUSY:gg2gluinogluino = on', 
+            'SUSY:qqbar2gluinogluino = on', 
+            'RHadrons:allow  = on', 
+            'RHadrons:allowDecay = off', 
+            'RHadrons:setMasses = on', 
+            'RHadrons:probGluinoball = 0.1'
+        ),
+        pythia8CP5Settings = cms.vstring(
+            'Tune:pp 14', 
+            'Tune:ee 7', 
+            'MultipartonInteractions:ecmPow=0.03344', 
+            'MultipartonInteractions:bProfile=2', 
+            'MultipartonInteractions:pT0Ref=1.41', 
+            'MultipartonInteractions:coreRadius=0.7634', 
+            'MultipartonInteractions:coreFraction=0.63', 
+            'ColourReconnection:range=5.176', 
+            'SigmaTotal:zeroAXB=off', 
+            'SpaceShower:alphaSorder=2', 
+            'SpaceShower:alphaSvalue=0.118', 
+            'SigmaProcess:alphaSvalue=0.118', 
+            'SigmaProcess:alphaSorder=2', 
+            'MultipartonInteractions:alphaSvalue=0.118', 
+            'MultipartonInteractions:alphaSorder=2', 
+            'TimeShower:alphaSorder=2', 
+            'TimeShower:alphaSvalue=0.118', 
+            'SigmaTotal:mode = 0', 
+            'SigmaTotal:sigmaEl = 21.89', 
+            'SigmaTotal:sigmaTot = 100.309', 
+            'PDF:pSet=LHAPDF6:NNPDF31_nnlo_as_0118'
+        ),
+        pythia8CommonSettings = cms.vstring(
+            'Tune:preferLHAPDF = 2', 
+            'Main:timesAllowErrors = 10000', 
+            'Check:epTolErr = 0.01', 
+            'Beams:setProductionScalesFromLHEF = off', 
+            #'SLHA:keepSM = on', COMMENTED OUT DUE TO ERROR
+            'SLHA:minMassSM = 1000.', 
+            'ParticleDecays:limitTau0 = on', 
+            'ParticleDecays:tau0Max = 10', 
+            'ParticleDecays:allowPhotonRadiation = on'
+        )
     ),
     SLHAFileForPythia8 = cms.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
     comEnergy = cms.double(13000.0),
@@ -96,15 +155,16 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
     particleFile = cms.untracked.string('Configuration/Generator/data/particles_gluino_1800_GeV.txt'),
     pdtFile = cms.FileInPath('Configuration/Generator/data/hscppythiapdtgluino1800.tbl'),
     processFile = cms.untracked.string(options.inputFiles[0]),
-    pythiaHepMCVerbosity = cms.untracked.bool(True),
-    pythiaPylistVerbosity = cms.untracked.int32(10),
+    pythiaHepMCVerbosity = cms.untracked.bool(False),
+    pythiaPylistVerbosity = cms.untracked.int32(0),
     slhaFile = cms.untracked.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
-    AddAntiParticle = cms.bool(True),
-    useregge = cms.bool(False)
+    useregge = cms.bool(False),
+ #   initialSeed = cms.untracked.uint32(912345678),
+#    engineName = cms.untracked.string('TRandom3')
 )
 
 
-process.ProductionFilterSequence = cms.Sequence(process.generator)
+process.ProductionFilterSequence = cms.Sequence(process.generator+process.dirhadrongenfilter)
 
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
@@ -115,7 +175,6 @@ process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.endjob_step,process.RAWSIMoutput_step)
-
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
 # filter all path with the production filter sequence
