@@ -15,9 +15,13 @@ cd SpikedRHadronAnalysis
 
 ## plugins/SpikedRHadronAnalyzer.cc
 
-SpikedRHadronAnalyzer.cc analyzes AOD level ROOT files containing two R-Hadrons per event. The gluino AOD ROOT file that it is run on could not be tracked on Git due to it's size, it can be copied to your directory from the lpc using this command.
+SpikedRHadronAnalyzer.cc analyzes AOD level ROOT files containing two R-Hadrons per event. The gluino AOD ROOT file that it is run on could not be tracked on Git due to it's size, it can be copied to your directory either from the lpc (requires kinit authentication) or lxplus based on your preference with either of the following commands:
 ```
 scp <YOUR USERNAME>@cmslpc-el9.fnal.gov:/uscms_data/d2/tadams/hscp/fall22a/CMSSW_10_6_30/src/EXO-RunIISummer20UL18GENSIM-00010-v3.root data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
+
+OR
+
+scp <YOUR USERNAME>@lxplus.cern.ch:/afs/cern.ch/user/c/cthompso/private/CMSSW_14_0_9/src/SpikedRHadronAnalysis/data/EXO-RunIISummer20UL18GENSIM-00010-v3.root data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
 ```
  Now you can use this command to run SpikedRHadronAnalyzer.cc
 ```
