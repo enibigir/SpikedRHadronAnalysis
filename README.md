@@ -9,26 +9,24 @@ cmsenv
 ```
 For the following step you should have a ssh key associated to your GitHub account. For more information, see [connecting-to-github-with-ssh-key.](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 ```
-git clone -b main git@github.com:ctdax/SpikedRHadronAnalysis.git SUSYBSMAnalysis/SpikedRHadronAnalysis
-scram b -j 8
+git clone git@github.com:ctdax/SpikedRHadronAnalysis.git SUSYBSMAnalysis/SpikedRHadronAnalysis
 cd SUSYBSMAnalysis/SpikedRHadronAnalysis
+scram b -j 8
 ```
 
 ## plugins/SpikedRHadronAnalyzer.cc
 
-SpikedRHadronAnalyzer.cc analyzes AOD level ROOT files containing two R-Hadrons per event. The gluino AOD ROOT file that it is run on could not be tracked on Git due to it's size, it can be copied to your directory either from the lpc (requires kinit authentication) or lxplus based on your preference with either of the following commands:
-```
-scp <YOUR USERNAME>@cmslpc-el9.fnal.gov:/uscms_data/d2/tadams/hscp/fall22a/CMSSW_10_6_30/src/EXO-RunIISummer20UL18GENSIM-00010-v3.root data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
+SpikedRHadronAnalyzer.cc analyzes AOD level ROOT files containing two R-Hadrons per event. The gluino AOD ROOT file that it is run on could not be tracked on Git due to it's size, [it can be downloaded from cernBox](https://cernbox.cern.ch/s/skRiVxTiVMNhir4) and should be downloaded into the data directory inside of SpikedRHadronAnalysis.
 
-OR
-
-scp <YOUR USERNAME>@lxplus.cern.ch:/eos/user/c/cthompso/data/EXO-RunIISummer20UL18GENSIM-00010-v3.root data/EXO-RunIISummer20UL18GENSIM-00010-v3.root
+Additionally, I recommend that you add the path of this directory to your $CMSSW_SEARCH_PATH by using the following command inside of the SpikedRHadronAnalysis directory:
 ```
+echo "export CMSSW_SEARCH_PATH=$PWD/:$CMSSW_SEARCH_PATH" > ~/.bashrc
+```
+
  Now you can use this command to run SpikedRHadronAnalyzer.cc
 ```
 cmsRun python/SpikedRHadronAnalyzer_cfg.py
 ```
-
 ## R-Hadron Gun
 
 test/RHadronGun_cfg.py takes a custom input file for the available R-Hadron processes and outputs an AOD root file with 10 events. It can be run with the following command
