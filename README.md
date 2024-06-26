@@ -21,7 +21,9 @@ SpikedRHadronAnalyzer.cc analyzes AOD level ROOT files containing two R-Hadrons 
 Additionally, I recommend that you add the path of this directory to your $CMSSW_SEARCH_PATH by using the following command inside of the SpikedRHadronAnalysis directory:
 ```
 echo "export CMSSW_SEARCH_PATH=$PWD/:$CMSSW_SEARCH_PATH" > ~/.bashrc
+source ~/.bashrc
 ```
+Now this path will be added automatically whenever you login to the server.
 
  Now you can use this command to run SpikedRHadronAnalyzer.cc
 ```

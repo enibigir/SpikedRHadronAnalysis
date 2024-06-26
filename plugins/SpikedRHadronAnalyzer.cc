@@ -1138,15 +1138,15 @@ void SpikedRHadronAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSe
   // Import tracker, calorimiter, and muon geometry
   const TrackerGeometry* tkGeometry = &iSetup.getData(tGeomEsToken_);
 
-  const CaloGeometry caloGeometry = iSetup.getData(tok_geom_);
+  //const CaloGeometry caloGeometry = iSetup.getData(tok_geom_);
 
-  const DTGeometry muonDTGeometry = iSetup.getData(DTGeometry_);
+  //const DTGeometry muonDTGeometry = iSetup.getData(DTGeometry_);
 
-  const CSCGeometry muonCSCGeometry = iSetup.getData(CSCGeometry_);
+  //const CSCGeometry muonCSCGeometry = iSetup.getData(CSCGeometry_);
 
-  const RPCGeometry muonRPCGeometry = iSetup.getData(RPCGeometry_);
+  //const RPCGeometry muonRPCGeometry = iSetup.getData(RPCGeometry_);
 
-  const GEMGeometry muonGEMGeometry = iSetup.getData(GEMGeometry_);
+  //const GEMGeometry muonGEMGeometry = iSetup.getData(GEMGeometry_);
 
    // Find R-hadrons
    const reco::GenParticle *genrhad1=0;

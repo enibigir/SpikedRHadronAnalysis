@@ -6,6 +6,7 @@
 import FWCore.ParameterSet.Config as cms
 from FWCore.ParameterSet.VarParsing import VarParsing
 from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
+from random import randint
 
 options = VarParsing('python')
 options.register ('particleID','',VarParsing.multiplicity.singleton, VarParsing.varType.int, "particleID")
@@ -29,7 +30,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(20)
+    input = cms.untracked.int32(10)
 )
 
 # random number seed - change below
@@ -159,7 +160,7 @@ process.generator = cms.EDFilter("Pythia8ConcurrentGeneratorFilter",
     pythiaPylistVerbosity = cms.untracked.int32(0),
     slhaFile = cms.untracked.string('Configuration/Generator/data/HSCP_gluino_1800_SLHA.spc'),
     useregge = cms.bool(False),
- #   initialSeed = cms.untracked.uint32(912345678),
+    initialSeed = cms.untracked.uint32(randint(1,999999999)),
 #    engineName = cms.untracked.string('TRandom3')
 )
 
@@ -169,6 +170,7 @@ process.ProductionFilterSequence = cms.Sequence(process.generator+process.dirhad
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
 process.simulation_step = cms.Path(process.psim)
+#process.simulation_step.Verbosity = cms.untracked.int32(1) #Change verbosity of geant output for debugging purposes
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
