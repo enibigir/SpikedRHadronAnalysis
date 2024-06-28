@@ -18,9 +18,9 @@ scram b -j 8
 
 SpikedRHadronAnalyzer.cc analyzes AOD level ROOT files containing two R-Hadrons per event. The gluino AOD ROOT file that it is run on could not be tracked on Git due to it's size, [it can be downloaded from cernBox](https://cernbox.cern.ch/s/skRiVxTiVMNhir4) and should be downloaded into the data directory inside of SpikedRHadronAnalysis.
 
-Additionally, I recommend that you add the path of this directory to your $CMSSW_SEARCH_PATH by using the following command inside of the SpikedRHadronAnalysis directory:
+Additionally, I recommend that you add the path of this directory to your $CMSSW_SEARCH_PATH by using the following command inside of the SpikedRHadronAnalysis directory (making sure to change {PWD}):
 ```
-echo "export CMSSW_SEARCH_PATH=$PWD/:$CMSSW_SEARCH_PATH" > ~/.bashrc
+echo "export CMSSW_SEARCH_PATH={PWD}/:$CMSSW_SEARCH_PATH" > ~/.bashrc
 source ~/.bashrc
 ```
 Now this path will be added automatically whenever you login to the server.
