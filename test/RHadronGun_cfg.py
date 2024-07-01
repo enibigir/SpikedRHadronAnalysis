@@ -30,7 +30,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(100)
 )
 
 # random number seed - change below
@@ -170,10 +170,22 @@ process.ProductionFilterSequence = cms.Sequence(process.generator+process.dirhad
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
 process.simulation_step = cms.Path(process.psim)
-#process.simulation_step.Verbosity = cms.untracked.int32(1) #Change verbosity of geant output for debugging purposes
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
+
+# Modify verboisty for debugging
+process.MessageLogger = cms.Service(
+    "MessageLogger",
+    destinations = cms.untracked.vstring(
+        'detailedInfo',
+         'critical'
+         ),
+    detailedInfo = cms.untracked.PSet(
+        threshold  = cms.untracked.string('DEBUG') 
+         ),
+    debugModules = cms.untracked.vstring('*')
+    )
 
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.endjob_step,process.RAWSIMoutput_step)
