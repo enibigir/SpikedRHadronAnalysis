@@ -50,15 +50,13 @@ G4double FullModelHadronicProcess::GetMeanFreePath(const G4Track& aTrack, G4doub
 }
 
 G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep) {
-  //  G4cout<<"**** Entering FullModelHadronicProcess::PostStepDoIt       ******"<<G4endl;
   const G4TouchableHandle& thisTouchable(aTrack.GetTouchableHandle());
 
-  // A little setting up
+  // Define the R-hadron as a CustomParticle named CustomIncident. Declare other variables of use later in the script.
   aParticleChange.Initialize(aTrack);
   const G4DynamicParticle* IncidentRhadron = aTrack.GetDynamicParticle();
   CustomParticle* CustomIncident = static_cast<CustomParticle*>(IncidentRhadron->GetDefinition());
   const G4ThreeVector& aPosition = aTrack.GetPosition();
-  //  G4cout<<"G: "<<aStep.GetStepLength()/cm<<G4endl;
   const G4int theIncidentPDG = IncidentRhadron->GetDefinition()->GetPDGEncoding();
   G4ParticleTable* theParticleTable = G4ParticleTable::GetParticleTable();
   std::vector<G4ParticleDefinition*> theParticleDefinitions;
@@ -68,121 +66,76 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
   G4ParticleDefinition* outgoingRhadron = nullptr;
   G4ParticleDefinition* outgoingCloud = nullptr;
   G4ParticleDefinition* outgoingTarget = nullptr;
-
   G4ThreeVector p_0 = IncidentRhadron->GetMomentum();
   G4double e_kin_0 = IncidentRhadron->GetKineticEnergy();
-  //  G4cout<<e_kin_0/GeV<<G4endl;
 
+  // Declare the quark cloud as a G4DynamicParticle
   G4DynamicParticle* cloudParticle = new G4DynamicParticle();
-  /*
-  if(CustomPDGParser::s_isRMeson(theIncidentPDG))
-    G4cout<<"Rmeson"<<G4endl;
-  if(CustomPDGParser::s_isRBaryon(theIncidentPDG)) 
-    G4cout<<"Rbaryon"<<G4endl;
-  */
   cloudParticle->SetDefinition(CustomIncident->GetCloud());
-
   if (cloudParticle->GetDefinition() == nullptr) {
     G4cout << "FullModelHadronicProcess::PostStepDoIt  Definition of particle cloud not available!!" << G4endl;
   }
-  /*
-  G4cout<<"Incoming particle was "<<IncidentRhadron->GetDefinition()->GetParticleName()
-  <<". Corresponding cloud is "<<cloudParticle->GetDefinition()->GetParticleName()<<G4endl;
-  G4cout<<"Kinetic energy was: "<<IncidentRhadron->GetKineticEnergy()/GeV<<" GeV"<<G4endl;
-  */
-  double scale = cloudParticle->GetDefinition()->GetPDGMass() / IncidentRhadron->GetDefinition()->GetPDGMass();
-  //  G4cout<<"Mass ratio: "<<scale<<G4endl;
-  G4LorentzVector cloudMomentum(IncidentRhadron->GetMomentum() * scale, cloudParticle->GetDefinition()->GetPDGMass());
-  G4LorentzVector gluinoMomentum(IncidentRhadron->GetMomentum() * (1. - scale),
-                                 CustomIncident->GetSpectator()->GetPDGMass());
 
-  //These two for getting CMS transforms later (histogramming purposes...)
+  // Define the gluino and quark cloud G4LorentzVector (momentum, total energy) based on the momentum of the R-hadron and the ratio of the masses
+  double scale = cloudParticle->GetDefinition()->GetPDGMass() / IncidentRhadron->GetDefinition()->GetPDGMass();
+  G4LorentzVector cloudMomentum(IncidentRhadron->GetMomentum() * scale, cloudParticle->GetTotalEnergy());
+  G4LorentzVector gluinoMomentum(IncidentRhadron->GetMomentum() * (1. - scale), CustomIncident->GetTotalEnergy() - cloudParticle->GetTotalEnergy());
+
+  //These two for getting CMS transforms later (histogramming purposes...) NEED TO FIGURE OUT WHAT THIS DOES
   G4LorentzVector FullRhadron4Momentum = IncidentRhadron->Get4Momentum();
   const G4LorentzVector& Cloud4Momentum = cloudMomentum;
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  //Set the momentum of the quark cloud
   cloudParticle->Set4Momentum(cloudMomentum);
 
-  G4DynamicParticle* OrgPart = cloudParticle;
+  // Declare the kinetic energies of the R-hadron and the quark cloud. Calculate the kinetic energy of the target nucleus.
+  double incidentRHadronKineticEnergy = IncidentRhadron->GetKineticEnergy();
+  G4double cloudKineticEnergy = cloudParticle->GetKineticEnergy();
+  G4double targetNucleusKineticEnergy = targetNucleus.Cinema(cloudKineticEnergy);
+  cloudKineticEnergy += targetNucleusKineticEnergy;
+  targetNucleusKineticEnergy = targetNucleus.EvaporationEffects(cloudKineticEnergy); // calculate black track energies
+  cloudKineticEnergy -= targetNucleusKineticEnergy;
 
-  /*
-  G4cout<<"Original momentum: "<<IncidentRhadron->Get4Momentum().v().mag()/GeV
-  <<" GeV, corresponding to gamma: "
-  <<IncidentRhadron->GetTotalEnergy()/IncidentRhadron->GetDefinition()->GetPDGMass()<<G4endl;
-  
-  G4cout<<"Cloud momentum: "<<cloudParticle->Get4Momentum().v().mag()/GeV
-  <<" GeV, corresponding to gamma: "
-  <<cloudParticle->GetTotalEnergy()/cloudParticle->GetDefinition()->GetPDGMass()<<G4endl;
-  */
-
-  double E_0 = IncidentRhadron->GetKineticEnergy();
-  G4double ek = OrgPart->GetKineticEnergy();
-  G4double amas = OrgPart->GetDefinition()->GetPDGMass();
-  G4ThreeVector dir = (OrgPart->GetMomentum()).unit();
-  G4double tkin = targetNucleus.Cinema(ek);
-  ek += tkin;
-
-  // calculate black track energies
-  tkin = targetNucleus.EvaporationEffects(ek);
-  ek -= tkin;
-
-  if (ek + gluinoMomentum.e() - gluinoMomentum.m() <= 0.1 * MeV || ek <= 0.) {
-    //Very rare event...
+  // If the R-hadron kinetic energy is less than 0.1 MeV, or the cloud kinetic energy is less than or equal to 0, stop the track but keep it alive. This should be very rare.
+  if (cloudKineticEnergy + gluinoMomentum.e() - gluinoMomentum.m() <= 0.1 * MeV || cloudKineticEnergy <= 0.) {
     G4cout << "Kinetic energy is sick" << G4endl;
-    G4cout << "Full R-hadron: " << (ek + gluinoMomentum.e() - gluinoMomentum.m()) / MeV << " MeV" << G4endl;
-    G4cout << "Quark system: " << ek / MeV << " MeV" << G4endl;
+    G4cout << "Full R-hadron: " << (cloudKineticEnergy + gluinoMomentum.e() - gluinoMomentum.m()) / MeV << " MeV" << G4endl;
+    G4cout << "Quark system: " << cloudKineticEnergy / MeV << " MeV" << G4endl;
     aParticleChange.ProposeTrackStatus(fStopButAlive);  // AR_NEWCODE_IMPORT
     return &aParticleChange;
   }
-  OrgPart->SetKineticEnergy(ek);
-  G4double p = std::sqrt(ek * (ek + 2 * amas));
-  OrgPart->SetMomentum(dir * p);
+  cloudParticle->SetKineticEnergy(cloudKineticEnergy);
 
   //Get the final state particles
   G4ParticleDefinition* aTarget;
-  ReactionProduct rp = theHelper->GetFinalState(aTrack, aTarget);
-  G4bool force2to2 = false;
-  //  G4cout<<"Trying to get final state..."<<G4endl;
-  while (rp.size() != 2 && force2to2) {
-    rp = theHelper->GetFinalState(aTrack, aTarget);
-  }
-  G4int NumberOfSecondaries = rp.size();
-  //  G4cout<<"Multiplicity of selected final state: "<<rp.size()<<G4endl;
+  ReactionProduct reactionProduct = theHelper->GetFinalState(aTrack, aTarget);
+  G4int NumberOfSecondaries = reactionProduct.size();
 
   //Getting CMS transforms. Boosting is done at histogram filling
-  G4LorentzVector Target4Momentum(0., 0., 0., aTarget->GetPDGMass());
-
+  G4LorentzVector Target4Momentum(0., 0., 0., aTarget->GetTotalEnergy());
   G4LorentzVector psum_full = FullRhadron4Momentum + Target4Momentum;
   G4LorentzVector psum_cloud = Cloud4Momentum + Target4Momentum;
   G4ThreeVector trafo_full_cms = (-1) * psum_full.boostVector();
   G4ThreeVector trafo_cloud_cms = (-1) * psum_cloud.boostVector();
 
-  // OK Let's make some particles :-)
-  // We're not using them for anything yet, I know, but let's make sure the machinery is there
-  for (ReactionProduct::iterator it = rp.begin(); it != rp.end(); ++it) {
+  //Process outgoing particles from reactions
+  for (ReactionProduct::iterator it = reactionProduct.begin(); it != reactionProduct.end(); ++it) {
     G4ParticleDefinition* tempDef = theParticleTable->FindParticle(*it);
     CustomParticle* tempCust = dynamic_cast<CustomParticle*>(tempDef);
     if (tempDef == aTarget)
       TargetSurvives = true;
 
-    //      if (tempDef->GetParticleType()=="rhadron")
-    if (tempCust != nullptr) {
+    if (tempDef->GetParticleType()=="rhadron") {
       outgoingRhadron = tempDef;
-      //Setting outgoing cloud definition
       outgoingCloud = tempCust->GetCloud();
       if (outgoingCloud == nullptr) {
-        G4cout << "FullModelHadronicProcess::PostStepDoIt  Definition of outgoing particle cloud not available!"
-               << G4endl;
+        G4cout << "FullModelHadronicProcess::PostStepDoIt  Definition of outgoing particle cloud not available!" << G4endl;
       }
-      /*
-	G4cout<<"Outgoing Rhadron is: "<<outgoingRhadron->GetParticleName()<<G4endl;
-	G4cout<<"Outgoing cloud is: "<<outgoingCloud->GetParticleName()<<G4endl;
-      */
     }
 
-    if (tempDef == G4Proton::Proton() || tempDef == G4Neutron::Neutron())
-      outgoingTarget = tempDef;
-    if (tempCust == nullptr && rp.size() == 2)
-      outgoingTarget = tempDef;
+    if (tempDef == G4Proton::Proton() || tempDef == G4Neutron::Neutron()) outgoingTarget = tempDef;
+    if (tempCust == nullptr && reactionProduct.size() == 2) outgoingTarget = tempDef;
     if (tempDef->GetPDGEncoding() == theIncidentPDG) {
       IncidentSurvives = true;
     } else {
@@ -190,99 +143,56 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
     }
   }
 
+  //If no reaction occured, set the outgoingTarget to the incoming particle
   if (outgoingTarget == nullptr)
-    outgoingTarget = theParticleTable->FindParticle(rp[1]);
+    outgoingTarget = theParticleTable->FindParticle(reactionProduct[1]);
 
-  // A little debug information
-  /*
-  G4cout<<"The particles coming out of this reaction will be: ";
-  for (std::vector<G4DynamicParticle*>::iterator it = theDynamicParticles.begin();
-       it != theDynamicParticles.end();
-       it++){
-    G4cout<< (*it)->GetDefinition()->GetParticleName()<<" ";
-  }
-  G4cout<<G4endl;
-  */
-  // If the incident particle survives it is not a "secondary", although
-  // it would probably be easier to fStopAndKill the track every time.
+  //If the incident particle survives, decrement the number of secondaries
   if (IncidentSurvives)
     NumberOfSecondaries--;
   aParticleChange.SetNumberOfSecondaries(NumberOfSecondaries);
 
-  // ADAPTED FROM G4LEPionMinusInelastic::ApplyYourself
-  // It is bloody ugly, but such is the way of cut 'n' paste
+  //Calculate the Lorentz rotation of the cloud particle to the lab frame
+  G4HadProjectile* originalIncident = new G4HadProjectile(*cloudParticle);
+  G4LorentzRotation cloudParticleToLabFrameRotation = originalIncident->GetTrafoToLab();
 
-  // Set up the incident
-  // This is where rotation to z-axis is done
-  const G4HadProjectile* originalIncident = new G4HadProjectile(*OrgPart);
-
-  //Maybe I need to calculate trafo from R-hadron... Bollocks! Labframe does not move. CMS does.
-  G4HadProjectile* org2 = new G4HadProjectile(*OrgPart);
-  G4LorentzRotation trans = org2->GetTrafoToLab();
-  delete org2;
-
-  // create the target particle
-
+  //Create the current and target particles with proper momenta and kinetic energy
   G4DynamicParticle* originalTarget = new G4DynamicParticle;
   originalTarget->SetDefinition(aTarget);
-
   G4ReactionProduct targetParticle(aTarget);
-
   G4ReactionProduct currentParticle(const_cast<G4ParticleDefinition*>(originalIncident->GetDefinition()));
   currentParticle.SetMomentum(originalIncident->Get4Momentum().vect());
   currentParticle.SetKineticEnergy(originalIncident->GetKineticEnergy());
+  G4ReactionProduct modifiedOriginal = currentParticle; // modifiedOriginal will have Fermi motion and evaporative effects included
 
-  /*
-  G4cout<<"After creation:"<<G4endl;
-  G4cout<<"currentParticle: "<<currentParticle.GetMomentum()/GeV<<" GeV vs. "<<OrgPart->Get4Momentum()/GeV<<" GeV"<<G4endl;
-  G4cout<<"targetParticle: "<<targetParticle.GetMomentum()/GeV<<" GeV"<<G4endl;
-  G4cout<<"Fourmomentum from originalIncident: "<<originalIncident->Get4Momentum()<<" vs "<<OrgPart->Get4Momentum()<<G4endl;
-  */
-
-  G4ReactionProduct modifiedOriginal = currentParticle;
-
+  //Set the hemisphere of the current and target particles. Initialize an empty vector for the secondary particles
   currentParticle.SetSide(1);  // incident always goes in forward hemisphere
   targetParticle.SetSide(-1);  // target always goes in backward hemisphere
-  G4bool incidentHasChanged = false;
-  if (!IncidentSurvives)
-    incidentHasChanged = true;  //I wonder if I am supposed to do this...
-  G4bool targetHasChanged = false;
-  if (!TargetSurvives)
-    targetHasChanged = true;  //Ditto here
   G4bool quasiElastic = false;
-  if (rp.size() == 2)
-    quasiElastic = true;                                //Oh well...
+  if (reactionProduct.size() == 2)
+    quasiElastic = true;
   G4FastVector<G4ReactionProduct, MYGHADLISTSIZE> vec;  // vec will contain the secondary particles
   G4int vecLen = 0;
   vec.Initialize(0);
 
-  // I hope my understanding of "secondary" is correct here
-  // I think that it entails only what is not a surviving incident of target
-
+  //Fill the vector with the secondary particles. Here secondary particle is defined as any particle that is not the incident or target particle.
   for (G4int i = 0; i != NumberOfSecondaries; i++) {
     if (theParticleDefinitions[i] != aTarget && theParticleDefinitions[i] != originalIncident->GetDefinition() &&
         theParticleDefinitions[i] != outgoingRhadron && theParticleDefinitions[i] != outgoingTarget) {
       G4ReactionProduct* pa = new G4ReactionProduct;
       pa->SetDefinition(theParticleDefinitions[i]);
-      (G4UniformRand() < 0.5) ? pa->SetSide(-1) : pa->SetSide(1);
+      (G4UniformRand() < 0.5) ? pa->SetSide(-1) : pa->SetSide(1); //Here we randomly determine the hemisphere of the secondary particle
       vec.SetElement(vecLen++, pa);
     }
   }
 
-  if (incidentHasChanged)
+  //Update the current and target particles based on wether or not they survive the reaction
+  if (!IncidentSurvives) {
     currentParticle.SetDefinitionAndUpdateE(outgoingCloud);
-  if (incidentHasChanged)
-    modifiedOriginal.SetDefinition(
-        outgoingCloud);  //Is this correct? It solves the "free energy" checking in ReactionDynamics
-  if (targetHasChanged)
+    modifiedOriginal.SetDefinition(outgoingCloud);
+  }
+  if (!TargetSurvives)
     targetParticle.SetDefinitionAndUpdateE(outgoingTarget);
-
-  //  G4cout<<"Calling CalculateMomenta... "<<G4endl;
-  /*
-  G4cout<<"Current particle starts as: "<<currentParticle.GetDefinition()->GetParticleName()<<G4endl;
-  G4cout<<"with momentum: "<<currentParticle.GetMomentum()/GeV<<" GeV"<<G4endl;
-  G4cout<<"May be killed?: "<<currentParticle.GetMayBeKilled()<<G4endl;
-  */
 
   CalculateMomenta(vec,
                    vecLen,
@@ -292,55 +202,20 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
                    targetNucleus,
                    currentParticle,
                    targetParticle,
-                   incidentHasChanged,
-                   targetHasChanged,
+                   !IncidentSurvives,
+                   !TargetSurvives,
                    quasiElastic);
 
-  //  G4cout <<"Cloud loss: "<<(e_temp-currentParticle.GetKineticEnergy())/GeV<<" GeV"<<G4endl;
+ //STOPPED HERE//////////////
 
   G4String cPname = currentParticle.GetDefinition()->GetParticleName();
-
-  //  if(cPname!="rhadronmesoncloud"&&cPname!="rhadronbaryoncloud")
-  //    {
-  /*
-  G4cout<<"Current particle is now: "<<cPname <<G4endl;
-  G4cout<<"with momentum: "<<currentParticle.GetMomentum()/GeV<<" GeV"<<G4endl;
-  G4cout<<"and kinetic energy: "<<currentParticle.GetKineticEnergy()/GeV<<" GeV"<<G4endl;
-  G4cout<<"May be killed?: "<<currentParticle.GetMayBeKilled()<<G4endl;
-  G4cout<<"Modified original is: "<<modifiedOriginal.GetDefinition()->GetParticleName()<<G4endl;
-  G4cout<<"with momentum: "<<modifiedOriginal.GetMomentum()/GeV<<" GeV"<<G4endl;
-  G4cout<<"and kinetic energy: "<<modifiedOriginal.GetKineticEnergy()/GeV<<" GeV"<<G4endl;
-  G4cout<<"May be killed?: "<<modifiedOriginal.GetMayBeKilled()<<G4endl;
-  G4cout<<"Target particle is: "<<targetParticle.GetDefinition()->GetParticleName()<<G4endl;
-  G4cout<<"with momentum: "<<targetParticle.GetMomentum()/GeV<<" GeV"<<G4endl;
-  G4cout<<"and kinetic energy: "<<targetParticle.GetKineticEnergy()/GeV<<" GeV"<<G4endl;
-  G4cout<<"May be killed?: "<<targetParticle.GetMayBeKilled()<<G4endl;
-  G4cout<<"incidentHasChanged: "<<incidentHasChanged<<G4endl;
-  G4cout<<"targetHasChanged: "<<targetHasChanged<<G4endl;
-  G4cout<<"Particles in vec:"<<G4endl;
-  for(int i=0; i<vecLen; ++i )
-    {
-      G4cout<< vec[i]->GetDefinition()->GetParticleName()<<G4endl;
-    }
-  */
-  // G4cout<<"Done!"<<G4endl;
 
   aParticleChange.SetNumberOfSecondaries(vecLen + NumberOfSecondaries);
   G4double e_kin = 0;
   G4LorentzVector cloud_p4_new;  //Cloud 4-momentum in lab after collision
-  //  n++;
-  //  G4cout << n << G4endl;
-  /*
-  if(cPname!="rhadronmesoncloud"&&cPname!="rhadronbaryoncloud") {
-    G4cout<<"Cloud deleted!!! AAARRRRGGGHHH!!!"<<G4endl;
-    G4cout<<"Cloud name: "<<cPname<<G4endl;
-    G4cout<<"E_kin_0: "<<e_kin_0/GeV<<" GeV"<<G4endl;
-    //    G4cout<<"n: "<<n<<G4endl;
-    //    n=0;
-  }
-  */
+
   cloud_p4_new.setVectM(currentParticle.GetMomentum(), currentParticle.GetMass());
-  cloud_p4_new *= trans;
+  cloud_p4_new *= cloudParticleToLabFrameRotation;
 
   G4LorentzVector cloud_p4_old_full = Cloud4Momentum;  //quark system in CMS BEFORE collision
   cloud_p4_old_full.boost(trafo_full_cms);
@@ -354,10 +229,7 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
   G4LorentzVector p_g_cms = gluinoMomentum;  //gluino in CMS BEFORE collision
   p_g_cms.boost(trafo_full_cms);
 
-  double e = cloud_p4_new.e() + gluinoMomentum.e();
-  if (outgoingRhadron)
-    e += outgoingRhadron->GetPDGMass();
-  G4LorentzVector p4_new(cloud_p4_new.v() + gluinoMomentum.v(), e);
+  G4LorentzVector p4_new = cloud_p4_new + gluinoMomentum;
   //  G4cout<<"P4-diff: "<<(p4_new-cloud_p4_new-gluinoMomentum)/GeV<<", magnitude: "
   // <<(p4_new-cloud_p4_new-gluinoMomentum).m()/MeV<<" MeV" <<G4endl;
 
@@ -365,7 +237,7 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
 
   aParticleChange.ProposeLocalEnergyDeposit((p4_new - cloud_p4_new - gluinoMomentum).m());
 
-  if (incidentHasChanged) {
+  if (!IncidentSurvives) {
     G4DynamicParticle* p0 = new G4DynamicParticle;
     p0->SetDefinition(outgoingRhadron);
     p0->SetMomentum(p_new);
@@ -384,7 +256,7 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
              << p0->GetDefinition()->GetParticleName() << ")" << G4endl;
       G4cout << "Energy loss: " << (e_kin_0 - p0->GetKineticEnergy()) / GeV << " GeV (should be positive)" << G4endl;
       //Turns out problem is only in 2 -> 3 (Won't fix 2 -> 2 energy deposition)
-      if (rp.size() != 3)
+      if (reactionProduct.size() != 3)
         G4cout << "DOUBLE ALAAAAARM!!!" << G4endl;
     } /*else {
 	G4cout<<"NO ALAAAAARM!!!"<<G4endl;
@@ -410,7 +282,7 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
     G4ThreeVector momentum = targetParticle.GetMomentum();
     momentum = momentum.rotate(cache, what);
     p1->SetMomentum(momentum);
-    p1->SetMomentum((trans * p1->Get4Momentum()).vect());
+    p1->SetMomentum((cloudParticleToLabFrameRotation * p1->Get4Momentum()).vect());
     G4Track* Track1 = new G4Track(p1, aTrack.GetGlobalTime(), aPosition);
     Track1->SetTouchableHandle(thisTouchable);
     aParticleChange.AddSecondary(Track1);
@@ -425,7 +297,7 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
     pa = new G4DynamicParticle();
     pa->SetDefinition(vec[i]->GetDefinition());
     pa->SetMomentum(vec[i]->GetMomentum());
-    pa->Set4Momentum(trans * (pa->Get4Momentum()));
+    pa->Set4Momentum(cloudParticleToLabFrameRotation * (pa->Get4Momentum()));
     G4ThreeVector pvec = pa->GetMomentum();
     G4Track* Trackn = new G4Track(pa, aTrack.GetGlobalTime(), aPosition);
     Trackn->SetTouchableHandle(thisTouchable);
@@ -466,11 +338,11 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
     G4LorentzVector p4_cloud = p4_new;  //R-hadron in cloud CMS AFTER collision
     p4_cloud.boost(trafo_cloud_cms);
 
-    G4double AbsDeltaE = E_0 - E_new;
+    G4double AbsDeltaE = incidentRHadronKineticEnergy - E_new;
     //      G4cout <<"Energy loss: "<<AbsDeltaE/GeV<<G4endl;
     if (AbsDeltaE > 10 * GeV) {
       G4cout << "Energy loss larger than 10 GeV..." << G4endl;
-      G4cout << "E_0: " << E_0 / GeV << " GeV" << G4endl;
+      G4cout << "Incident RHadron kinetic energy: " << E_incidentRHadronKineticEnergy0 / GeV << " GeV" << G4endl;
       G4cout << "E_new: " << E_new / GeV << " GeV" << G4endl;
       G4cout << "Gamma: " << IncidentRhadron->GetTotalEnergy() / IncidentRhadron->GetDefinition()->GetPDGMass()
              << G4endl;
@@ -527,18 +399,17 @@ void FullModelHadronicProcess::CalculateMomenta(
     // original was an anti-particle and annihilation has taken place
     annihilation = true;
     G4double ekcor = 1.0;
-    G4double ek = originalIncident->GetKineticEnergy();
-    G4double ekOrg = ek;
+    G4double cloudKineticEnergy = originalIncident->GetKineticEnergy();
+    G4double ekOrg = cloudKineticEnergy;
 
     const G4double tarmas = originalTarget->GetDefinition()->GetPDGMass();
-    if (ek > 1.0 * GeV)
-      ekcor = 1. / (ek / GeV);
+    if (cloudKineticEnergy > 1.0 * GeV)
+      ekcor = 1. / (cloudKineticEnergy / GeV);
     const G4double atomicWeight = G4double(targetNucleus.GetN_asInt());
-    ek = 2 * tarmas + ek * (1. + ekcor / atomicWeight);
+    cloudKineticEnergy = 2 * tarmas + cloudKineticEnergy * (1. + ekcor / atomicWeight);
 
-    G4double tkin = targetNucleus.Cinema(ek);
-    //ek += tkin;
-    ekOrg += tkin;
+    G4double targetNucleusKineticEnergy = targetNucleus.Cinema(cloudKineticEnergy);
+    ekOrg += targetNucleusKineticEnergy;
     modifiedOriginal.SetKineticEnergy(ekOrg);
   }
 
