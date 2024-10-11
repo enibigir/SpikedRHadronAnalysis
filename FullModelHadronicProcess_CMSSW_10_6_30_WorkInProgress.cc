@@ -67,7 +67,7 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
   G4ParticleDefinition* outgoingCloud = nullptr;
   G4ParticleDefinition* outgoingTarget = nullptr;
   G4ThreeVector p_0 = IncidentRhadron->GetMomentum();
-  G4double e_kin_0 = IncidentRhadron->GetKineticEnergy();
+  G4double E_0 = IncidentRhadron->GetTotalEnergy();
 
   // Declare the quark cloud as a G4DynamicParticle
   G4DynamicParticle* cloudParticle = new G4DynamicParticle();
@@ -152,7 +152,7 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
     NumberOfSecondaries--;
   aParticleChange.SetNumberOfSecondaries(NumberOfSecondaries);
 
-  //Calculate the Lorentz rotation of the cloud particle to the lab frame
+  //Calculate the Lorentz boost of the cloud particle to the lab frame
   G4HadProjectile* originalIncident = new G4HadProjectile(*cloudParticle);
   G4LorentzRotation cloudParticleToLabFrameRotation = originalIncident->GetTrafoToLab();
 
@@ -206,74 +206,56 @@ G4VParticleChange* FullModelHadronicProcess::PostStepDoIt(const G4Track& aTrack,
                    !TargetSurvives,
                    quasiElastic);
 
- //STOPPED HERE//////////////
-
-  G4String cPname = currentParticle.GetDefinition()->GetParticleName();
-
+  //Update the number of secondaries to the correct value
   aParticleChange.SetNumberOfSecondaries(vecLen + NumberOfSecondaries);
-  G4double e_kin = 0;
-  G4LorentzVector cloud_p4_new;  //Cloud 4-momentum in lab after collision
 
+  //Create a Lorentz Vector that represents the cloud 4-momentum in the lab frame after the collision
+  G4double e_kin = 0;
+  G4LorentzVector cloud_p4_new;
   cloud_p4_new.setVectM(currentParticle.GetMomentum(), currentParticle.GetMass());
   cloud_p4_new *= cloudParticleToLabFrameRotation;
 
-  G4LorentzVector cloud_p4_old_full = Cloud4Momentum;  //quark system in CMS BEFORE collision
-  cloud_p4_old_full.boost(trafo_full_cms);
-  G4LorentzVector cloud_p4_old_cloud = Cloud4Momentum;  //quark system in cloud CMS BEFORE collision
-  cloud_p4_old_cloud.boost(trafo_cloud_cms);
-  G4LorentzVector cloud_p4_full = cloud_p4_new;  //quark system in CMS AFTER collision
-  cloud_p4_full.boost(trafo_full_cms);
-  G4LorentzVector cloud_p4_cloud = cloud_p4_new;  //quark system in cloud CMS AFTER collision
-  cloud_p4_cloud.boost(trafo_cloud_cms);
+  //The new 4 momentum of the R-Hadron after the collision is the sum of the cloud and gluino 3-momentum, with the energy of the outgoing R-Hadron
+  G4LorentzVector p4_new(cloud_p4_new.v() + gluinoMomentum.v(), outgoingRhadron->GetTotalEnergy());
+  G4ThreeVector p3_new = p4_new.v();
 
-  G4LorentzVector p_g_cms = gluinoMomentum;  //gluino in CMS BEFORE collision
-  p_g_cms.boost(trafo_full_cms);
-
-  G4LorentzVector p4_new = cloud_p4_new + gluinoMomentum;
-  //  G4cout<<"P4-diff: "<<(p4_new-cloud_p4_new-gluinoMomentum)/GeV<<", magnitude: "
-  // <<(p4_new-cloud_p4_new-gluinoMomentum).m()/MeV<<" MeV" <<G4endl;
-
-  G4ThreeVector p_new = p4_new.vect();
-
+  //The deposited energy is then equivalent to the change in energy of the R-Hadron
   aParticleChange.ProposeLocalEnergyDeposit((p4_new - cloud_p4_new - gluinoMomentum).m());
 
+  //If the incident particle does not survive, update the outgoing track to be the new R-Hadron with the proper momentum, time, and position
   if (!IncidentSurvives) {
-    G4DynamicParticle* p0 = new G4DynamicParticle;
-    p0->SetDefinition(outgoingRhadron);
-    p0->SetMomentum(p_new);
+    G4DynamicParticle* dynamicOutgoingRhadron = new G4DynamicParticle;
+    dynamicOutgoingRhadron->SetDefinition(outgoingRhadron);
+    dynamicOutgoingRhadron->SetMomentum(p3_new);
 
-    // May need to run SetDefinitionAndUpdateE here...
-    G4Track* Track0 = new G4Track(p0, aTrack.GetGlobalTime(), aPosition);
+    G4Track* Track0 = new G4Track(dynamicOutgoingRhadron, aTrack.GetGlobalTime(), aPosition);
     Track0->SetTouchableHandle(thisTouchable);
     aParticleChange.AddSecondary(Track0);
-    /*
-      G4cout<<"Adding a particle "<<p0->GetDefinition()->GetParticleName()<<G4endl;
-      G4cout<<"with momentum: "<<p0->GetMomentum()/GeV<<" GeV"<<G4endl;
-      G4cout<<"and kinetic energy: "<<p0->GetKineticEnergy()/GeV<<" GeV"<<G4endl;
-      */
-    if (p0->GetKineticEnergy() > e_kin_0) {
-      G4cout << "ALAAAAARM!!! (incident changed from " << IncidentRhadron->GetDefinition()->GetParticleName() << " to "
-             << p0->GetDefinition()->GetParticleName() << ")" << G4endl;
-      G4cout << "Energy loss: " << (e_kin_0 - p0->GetKineticEnergy()) / GeV << " GeV (should be positive)" << G4endl;
-      //Turns out problem is only in 2 -> 3 (Won't fix 2 -> 2 energy deposition)
-      if (reactionProduct.size() != 3)
-        G4cout << "DOUBLE ALAAAAARM!!!" << G4endl;
-    } /*else {
-	G4cout<<"NO ALAAAAARM!!!"<<G4endl;
-	}*/
-    if (std::abs(p0->GetKineticEnergy() - e_kin_0) > 100 * GeV) {
-      G4cout << "Diff. too big" << G4endl;
+
+    //Check if energy is conserved, output an error if it is not
+    if (dynamicOutgoingRhadron->GetTotalEnergy() > E_0) {
+      G4cerr << "An error occured in FullModelHadronicProcess.cc. Energy was not conserved during an interaction. The incident particle changed from " << IncidentRhadron->GetDefinition()->GetParticleName() << " to "
+             << dynamicOutgoingRhadron->GetDefinition()->GetParticleName() << ". The energy loss was: " << (E_0 - dynamicOutgoingRhadron->GetTotalEnergy()) / GeV << " GeV (this should be positive)." << G4endl;
+    } 
+    //Check to make sure the energy loss is not too large, output an error if it is larger than 100GeV
+    if (std::abs(dynamicOutgoingRhadron->GetTotalEnergy() - E_0) > 100 * GeV) {
+      G4cerr << "The change in energy during an interaction was anomalously large (" << std::abs(dynamicOutgoingRhadron->GetTotalEnergy() - E_0) << " GeV)" << G4endl;
     }
+
+    //Stop the old track
     aParticleChange.ProposeTrackStatus(fStopAndKill);
-  } else {
-    G4double p = p_new.mag();
-    if (p > DBL_MIN)
-      aParticleChange.ProposeMomentumDirection(p_new.x() / p, p_new.y() / p, p_new.z() / p);
+  } 
+
+  //If the incident particle survives, simply update its momentum direction. Includes error handling for when the momentum is zero
+  else {
+    if (p3_new.mag() > DBL_MIN)
+      aParticleChange.ProposeMomentumDirection(p3_new.x() / p3_new.mag(), p3_new.y() / p3_new.mag(), p3_new.z() / p3_new.mag());
     else
       aParticleChange.ProposeMomentumDirection(1.0, 0.0, 0.0);
   }
 
-  //    return G4VDiscreteProcess::PostStepDoIt( aTrack, aStep);
+//STOPPED HERE/////////////////////
+
   if (targetParticle.GetMass() > 0.0)  // targetParticle can be eliminated in TwoBody
   {
     G4DynamicParticle* p1 = new G4DynamicParticle;
